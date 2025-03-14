@@ -55,13 +55,19 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 # Ignore sensitive key files
 my-firebase-key.json
+=======
+
+# Ignore sensitive key files
+>>>>>>> d2f8d9b (3.14 commit from ec2)
 DBKEY.pem
 REALKEY.pem
 REALKEY2.pem
 REALKEY2.pem.pub
 SECONDKEY.pem
-=======
->>>>>>> 4b8f998 (commit from ec2)
+my-firebase-key.json
+.env
+
