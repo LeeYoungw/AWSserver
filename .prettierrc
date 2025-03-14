@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 {
   "singleQuote": true,
   "trailingComma": "all"
+=======
+{
+  "singleQuote": true,
+  "trailingComma": "all"
+>>>>>>> 4b8f998 (commit from ec2)
 }
