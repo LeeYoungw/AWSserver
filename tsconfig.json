@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": false,
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
     "resolveJsonModule": true,
     "target": "ES2021",
     "sourceMap": true,
@@ -20,8 +22,6 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": [
-    "src",
-    "my-firebase-key.json"
-  ]
+  "include": ["src", "my-firebase-key.json", "src/data-source.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

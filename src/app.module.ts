@@ -6,28 +6,50 @@ import { AuthModule } from './auth/auth.module';
 import * as admin from 'firebase-admin';
 import { join } from 'path';
 
+import { BattleLog } from './entities/battle-log.entity';
+import { BattlePass } from './entities/battle-pass.entity';
+import { CardLevelStats } from './entities/card-level-stats.entity';
+import { Card } from './entities/card.entity';
+import { Civilization } from './entities/civilization.entity';
+import { DeckSlot } from './entities/deck-slot.entity';
+import { ShopItemsPool } from './entities/shop-items-pool.entity';
+import { ShopPurchaseLog } from './entities/shop-purchase-log.entity';
+import { User } from './entities/user.entity';
+import { BattleLogModule } from './battle-log/battle-log.module';
+import { UserModule } from './Lobby/lobby.module';
+import { ShopModule } from './shop/shop.module';
+import { DeckModule } from './deck/deck.module'; 
+import { CardModule } from './card/card.module'; 
+import { UserCard } from './entities/user-card.entity';
+import { UserDeck } from './entities/user-deck.entity';
+
 const serviceAccount = require(join(process.cwd(), 'my-firebase-key.json'));
 
-// Firebase Admin SDK 초기화 (한 번만 호출)
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+
 @Module({
   imports: [
-    AuthModule, // Auth 모듈 추가
+    AuthModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost', // MySQL 서버 주소
-      port: 3306, // MySQL 기본 포트
-      username: 'root', // MySQL 계정
-      password: 'sodksk12!@', // MySQL 비밀번호
-      database: 'game_login_table', // 사용할 데이터베이스명
-      synchronize: true, // 기존 테이블 유지
-      autoLoadEntities: true, // 엔티티 자동 로드
+      host: 'localhost',
+      port: 3306,
+      username: 'root',
+      password: 'sodksk12!@',
+      database: 'gametable',
+      synchronize: false,
+      autoLoadEntities: true,
+      entities: [BattleLog, BattlePass, CardLevelStats, Card, Civilization, DeckSlot, ShopItemsPool, ShopPurchaseLog, UserCard, UserDeck, User],
     }),
+    BattleLogModule,
+    UserModule,
+    ShopModule,
+    DeckModule,
+    CardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-
