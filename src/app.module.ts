@@ -22,6 +22,9 @@ import { DeckModule } from './deck/deck.module';
 import { CardModule } from './card/card.module'; 
 import { UserCard } from './entities/user-card.entity';
 import { UserDeck } from './entities/user-deck.entity';
+import { BattlePassMission } from './entities/battle-pass-mission.entity';
+import { BattlePassReward } from './entities/battle-pass-reward.entity';
+import { BattlePassModule } from './battle-pass/battle-pass.module';
 
 const serviceAccount = require(join(process.cwd(), 'my-firebase-key.json'));
 
@@ -41,13 +44,14 @@ admin.initializeApp({
       database: 'gametable',
       synchronize: false,
       autoLoadEntities: true,
-      entities: [BattleLog, BattlePass, CardLevelStats, Card, Civilization, DeckSlot, ShopItemsPool, ShopPurchaseLog, UserCard, UserDeck, User],
+      entities: [BattleLog, BattlePass, CardLevelStats, Card, Civilization, DeckSlot, ShopItemsPool, ShopPurchaseLog, UserCard, UserDeck,BattlePassMission, BattlePassReward,   User],
     }),
     BattleLogModule,
     UserModule,
     ShopModule,
     DeckModule,
     CardModule,
+    BattlePassModule,
   ],
   controllers: [AppController],
   providers: [AppService],

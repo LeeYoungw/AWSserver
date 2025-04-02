@@ -3,10 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { BattlePassMission } from './battle-pass-mission.entity';
 
 @Entity('battle_pass')
 export class BattlePass {
@@ -18,6 +20,11 @@ export class BattlePass {
   })
   user: User;
 
+  @OneToMany(() => BattlePassMission, (mission) => mission.battlePass, {
+    cascade: true,
+  })
+  missions: BattlePassMission[];
+
   @Column({ default: 0 })
   battle_pass_xp: number;
 
@@ -26,6 +33,9 @@ export class BattlePass {
 
   @Column({ type: 'tinyint', default: 1 })
   is_active: boolean;
+
+  @Column({ type: 'tinyint', default: 0 }) // 0 = 무료, 1 = 유료
+  is_premium: boolean;
 
   @CreateDateColumn({
     type: 'timestamp',

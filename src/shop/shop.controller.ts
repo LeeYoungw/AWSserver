@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
 import { ShopService } from './shop.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('Shop')
 @Controller('shop')
@@ -8,6 +8,7 @@ export class ShopController {
   constructor(private readonly shopService: ShopService) {}
 
   @ApiOperation({ summary: '상점 아이템 생성' })
+  @ApiParam({ name: 'userId', type: String, description: '유저 ID' })
   @ApiResponse({ status: 201, description: '상점 아이템이 생성되었습니다.' })
   @Post('generate/:userId')
   generateShopItems(@Param('userId') userId: string) {
@@ -15,6 +16,7 @@ export class ShopController {
   }
 
   @ApiOperation({ summary: '현재 상점 아이템 조회' })
+  @ApiParam({ name: 'userId', type: String, description: '유저 ID' })
   @ApiResponse({ status: 200, description: '유효한 상점 아이템 목록 반환' })
   @Get(':userId')
   getShopItems(@Param('userId') userId: string) {
@@ -22,6 +24,8 @@ export class ShopController {
   }
 
   @ApiOperation({ summary: '상점 아이템 구매' })
+  @ApiParam({ name: 'userId', type: String, description: '유저 ID' })
+  @ApiParam({ name: 'itemId', type: Number, description: '아이템 ID' })
   @ApiResponse({ status: 201, description: '아이템 구매 성공' })
   @Post('purchase/:userId/:itemId')
   purchaseItem(

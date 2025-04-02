@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+// auth.controller.ts
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from '../dto/auth.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger'; // ✅ ApiBody 추가
 
-@ApiTags('Auth')  // ✅ Swagger 그룹
+@ApiTags('Auth')
 @Controller('users')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -26,6 +27,7 @@ export class AuthController {
   @ApiOperation({ summary: '회원가입' })
   @ApiResponse({ status: 201, description: '회원가입 성공' })
   @ApiResponse({ status: 400, description: '이메일 또는 비밀번호 오류' })
+  @ApiBody({ type: RegisterDto }) // ✅ Swagger Body 명세 추가
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto.email, registerDto.password);
@@ -34,9 +36,9 @@ export class AuthController {
   @ApiOperation({ summary: '로그인' })
   @ApiResponse({ status: 200, description: '로그인 성공 및 JWT 반환' })
   @ApiResponse({ status: 401, description: '이메일 또는 비밀번호 오류' })
+  @ApiBody({ type: LoginDto }) // ✅ Swagger Body 명세 추가
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
   }
 }
-

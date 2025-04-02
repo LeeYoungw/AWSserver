@@ -10,6 +10,8 @@ import { ShopItemsPool } from './entities/shop-items-pool.entity';
 import { ShopPurchaseLog } from './entities/shop-purchase-log.entity';
 import { CardLevelStats } from './entities/card-level-stats.entity';
 import { Civilization } from './entities/civilization.entity';
+import { BattlePassMission } from './entities/battle-pass-mission.entity';
+import { BattlePassReward } from './entities/battle-pass-reward.entity';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -18,16 +20,23 @@ export const AppDataSource = new DataSource({
   username: 'root',
   password: 'sodksk12!@',
   database: 'gametable',
-  synchronize: false, 
+  synchronize: false,
   logging: true,
-  entities: [User, BattleLog, BattlePass,Card,
+  entities: [
+    User,
+    BattleLog,
+    BattlePass,
+    Card,
     UserCard,
     UserDeck,
     DeckSlot,
     ShopItemsPool,
     ShopPurchaseLog,
     CardLevelStats,
-    Civilization,],
+    Civilization,
+    BattlePassMission, 
+    BattlePassReward,  
+  ],
   migrations: ['dist/src/migrations/*.js'],
   migrationsTableName: 'migrations',
 });
