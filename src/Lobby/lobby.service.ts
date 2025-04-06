@@ -21,22 +21,21 @@ export class LobbyService {
   async getUserProfile(uid: string) {
     // 1. 유저 기본 정보 조회
     const user = await this.userRepository.findOne({ where: { id: uid } });
-
     if (!user) {
       throw new NotFoundException('유저를 찾을 수 없습니다.');
     }
 
-    // 2. 배틀 로그 조회 (해당 유저가 참여한 모든 배틀)
+    // 2. 배틀 로그 조회
     const battleLogs = await this.battleLogRepository.find({
       where: [
         { player1: { id: uid } },
         { player2: { id: uid } },
       ],
-      relations: ['player1', 'player2', 'winner'], // 관련된 유저 정보도 가져오기
+      relations: ['player1', 'player2', 'winner'],
       order: { created_at: 'DESC' },
     });
 
-    //3. 배틀 패스 정보 조회 (유저의 배틀 패스 데이터 가져오기)
+    // 3. 배틀 패스 조회
     const battlePass = await this.battlePassRepository.findOne({
       where: { user: { id: uid } },
     });
@@ -45,6 +44,7 @@ export class LobbyService {
       id: user.id,
       email: user.email,
       level: user.level,
+      exp: user.exp,
       trophies: user.trophies,
       gold: user.gold,
       diamond: user.diamond,
@@ -52,8 +52,15 @@ export class LobbyService {
       created_at: user.created_at,
       streak: user.streak,
       total_attendance: user.total_attendance,
-      battle_logs: battleLogs, 
-      battle_pass: battlePass, 
+      battle_logs: battleLogs,
+      battle_pass: battlePass
+        ? {
+            level: battlePass.battle_pass_level,
+            xp: battlePass.battle_pass_xp,
+            is_premium: !!battlePass.is_premium,
+          }
+        : null,
     };
   }
 }
+

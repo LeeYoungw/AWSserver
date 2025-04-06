@@ -20,12 +20,23 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column() password: string;
+  @Column()
+  password: string;
 
-  @Column({ default: 1 }) level: number;
-  @Column({ default: 0 }) trophies: number;
-  @Column({ default: 0 }) gold: number;
-  @Column({ default: 0 }) diamond: number;
+  @Column({ default: 1 })
+  level: number;
+
+  @Column({ default: 0 })
+  trophies: number;
+
+  @Column({ default: 0 })
+  gold: number;
+
+  @Column({ default: 0 })
+  diamond: number;
+
+  @Column({ default: 0 })
+  exp: number; 
 
   @Column({ type: 'timestamp', nullable: true })
   last_login: Date;
@@ -33,16 +44,33 @@ export class User {
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @Column({ default: 0 }) streak: number;
-  @Column({ default: 0 }) total_attendance: number;
+  @Column({ default: 0 })
+  streak: number;
 
-  @OneToMany(() => BattleLog, (log) => log.player1) battleLogsAsPlayer1: BattleLog[];
-  @OneToMany(() => BattleLog, (log) => log.player2) battleLogsAsPlayer2: BattleLog[];
-  @OneToMany(() => BattleLog, (log) => log.winner) battleLogsAsWinner: BattleLog[];
+  @Column({ default: 0 })
+  total_attendance: number;
 
-  @OneToMany(() => BattlePass, (pass) => pass.user) battlePasses: BattlePass[];
-  @OneToMany(() => UserCard, (uc) => uc.user) cards: UserCard[];
-  @OneToMany(() => UserDeck, (deck) => deck.user) decks: UserDeck[];
-  @OneToMany(() => ShopItemsPool, (item) => item.user) shopItems: ShopItemsPool[];
-  @OneToMany(() => ShopPurchaseLog, (log) => log.user) purchaseLogs: ShopPurchaseLog[];
+  @OneToMany(() => BattleLog, (log) => log.player1)
+  battleLogsAsPlayer1: BattleLog[];
+
+  @OneToMany(() => BattleLog, (log) => log.player2)
+  battleLogsAsPlayer2: BattleLog[];
+
+  @OneToMany(() => BattleLog, (log) => log.winner)
+  battleLogsAsWinner: BattleLog[];
+
+  @OneToMany(() => BattlePass, (pass) => pass.user)
+  battlePasses: BattlePass[];
+
+  @OneToMany(() => UserCard, (uc) => uc.user)
+  cards: UserCard[];
+
+  @OneToMany(() => UserDeck, (deck) => deck.user)
+  decks: UserDeck[];
+
+  @OneToMany(() => ShopItemsPool, (item) => item.user)
+  shopItems: ShopItemsPool[];
+
+  @OneToMany(() => ShopPurchaseLog, (log) => log.user)
+  purchaseLogs: ShopPurchaseLog[];
 }

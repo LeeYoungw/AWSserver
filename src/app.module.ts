@@ -25,6 +25,7 @@ import { UserDeck } from './entities/user-deck.entity';
 import { BattlePassMission } from './entities/battle-pass-mission.entity';
 import { BattlePassReward } from './entities/battle-pass-reward.entity';
 import { BattlePassModule } from './battle-pass/battle-pass.module';
+import { BattleStatisticsModule } from './battle-statistics/battle-statistics.module';
 
 const serviceAccount = require(join(process.cwd(), 'my-firebase-key.json'));
 
@@ -52,6 +53,7 @@ admin.initializeApp({
     DeckModule,
     CardModule,
     BattlePassModule,
+    BattleStatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
