@@ -49,7 +49,7 @@ export class AuthService {
 
       const savedUser = await this.userRepository.save(user);
 
-      // ✅ 회원가입 시 배틀패스 자동 생성
+      //  회원가입 시 배틀패스 자동 생성
       const battlePass = this.battlePassRepo.create({ user: savedUser });
       await this.battlePassRepo.save(battlePass);
 

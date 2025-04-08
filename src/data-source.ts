@@ -12,6 +12,7 @@ import { CardLevelStats } from './entities/card-level-stats.entity';
 import { Civilization } from './entities/civilization.entity';
 import { BattlePassMission } from './entities/battle-pass-mission.entity';
 import { BattlePassReward } from './entities/battle-pass-reward.entity';
+import { BattleStatistics } from './entities/battle-statistics.entity';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -35,7 +36,8 @@ export const AppDataSource = new DataSource({
     CardLevelStats,
     Civilization,
     BattlePassMission, 
-    BattlePassReward,  
+    BattlePassReward,
+    BattleStatistics,  
   ],
   migrations: ['dist/src/migrations/*.js'],
   migrationsTableName: 'migrations',

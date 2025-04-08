@@ -4,6 +4,7 @@ import {
   Column,
   OneToMany,
   CreateDateColumn,
+  OneToOne,
 } from 'typeorm';
 import { BattleLog } from './battle-log.entity';
 import { BattlePass } from './battle-pass.entity';
@@ -11,6 +12,7 @@ import { UserCard } from './user-card.entity';
 import { UserDeck } from './user-deck.entity';
 import { ShopItemsPool } from './shop-items-pool.entity';
 import { ShopPurchaseLog } from './shop-purchase-log.entity';
+import { BattleStatistics } from './battle-statistics.entity';
 
 @Entity('users')
 export class User {
@@ -73,4 +75,7 @@ export class User {
 
   @OneToMany(() => ShopPurchaseLog, (log) => log.user)
   purchaseLogs: ShopPurchaseLog[];
+  
+  @OneToOne(() => BattleStatistics, (stats) => stats.user)
+statistics: BattleStatistics;
 }

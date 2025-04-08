@@ -6,36 +6,24 @@ import { AuthModule } from './auth/auth.module';
 import * as admin from 'firebase-admin';
 import { join } from 'path';
 
-import { BattleLog } from './entities/battle-log.entity';
-import { BattlePass } from './entities/battle-pass.entity';
-import { CardLevelStats } from './entities/card-level-stats.entity';
-import { Card } from './entities/card.entity';
-import { Civilization } from './entities/civilization.entity';
-import { DeckSlot } from './entities/deck-slot.entity';
-import { ShopItemsPool } from './entities/shop-items-pool.entity';
-import { ShopPurchaseLog } from './entities/shop-purchase-log.entity';
-import { User } from './entities/user.entity';
-import { BattleLogModule } from './battle-log/battle-log.module';
-import { UserModule } from './Lobby/lobby.module';
-import { ShopModule } from './shop/shop.module';
-import { DeckModule } from './deck/deck.module'; 
-import { CardModule } from './card/card.module'; 
-import { UserCard } from './entities/user-card.entity';
-import { UserDeck } from './entities/user-deck.entity';
-import { BattlePassMission } from './entities/battle-pass-mission.entity';
-import { BattlePassReward } from './entities/battle-pass-reward.entity';
-import { BattlePassModule } from './battle-pass/battle-pass.module';
-import { BattleStatisticsModule } from './battle-statistics/battle-statistics.module';
-
+// Firebase 설정
 const serviceAccount = require(join(process.cwd(), 'my-firebase-key.json'));
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+// Feature Modules
+import { BattleLogModule } from './battle-log/battle-log.module';
+import { UserModule } from './Lobby/lobby.module';
+import { ShopModule } from './shop/shop.module';
+import { DeckModule } from './deck/deck.module';
+import { CardModule } from './card/card.module';
+import { BattlePassModule } from './battle-pass/battle-pass.module';
+import { BattleStatisticsModule } from './battle-statistics/battle-statistics.module';
+import { Civilization } from './entities/civilization.entity';
 @Module({
   imports: [
-    AuthModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: 'localhost',
@@ -45,8 +33,9 @@ admin.initializeApp({
       database: 'gametable',
       synchronize: false,
       autoLoadEntities: true,
-      entities: [BattleLog, BattlePass, CardLevelStats, Card, Civilization, DeckSlot, ShopItemsPool, ShopPurchaseLog, UserCard, UserDeck,BattlePassMission, BattlePassReward,   User],
+      logging: true,
     }),
+    AuthModule,
     BattleLogModule,
     UserModule,
     ShopModule,
@@ -54,8 +43,10 @@ admin.initializeApp({
     CardModule,
     BattlePassModule,
     BattleStatisticsModule,
+    Civilization,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

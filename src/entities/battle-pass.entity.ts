@@ -38,14 +38,14 @@ export class BattlePass {
   is_premium: boolean;
 
   @CreateDateColumn({
-    type: 'timestamp',
+    type: 'datetime',
     default: () => 'CURRENT_TIMESTAMP',
     nullable: false,
   })
   created_at: Date;
 
   @UpdateDateColumn({
-    type: 'timestamp',
+    type: 'datetime',
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
     nullable: false,
