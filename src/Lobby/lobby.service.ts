@@ -25,7 +25,7 @@ export class LobbyService {
       throw new NotFoundException('유저를 찾을 수 없습니다.');
     }
 
-    // 2. 배틀 로그 조회
+    // 2. 배틀 로그 조회 -> 이것도 수정?
     const battleLogs = await this.battleLogRepository.find({
       where: [
         { player1: { id: uid } },
@@ -39,7 +39,7 @@ export class LobbyService {
     const battlePass = await this.battlePassRepository.findOne({
       where: { user: { id: uid } },
     });
-
+    // 수정해야 할 부분들?
     return {
       id: user.id,
       email: user.email,

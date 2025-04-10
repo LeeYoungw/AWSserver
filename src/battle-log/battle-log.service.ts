@@ -51,19 +51,30 @@ export class BattleLogService {
     });
   }
 
-  //  페이지네이션 기반 유저 전투 기록 조회
+  //  페이지네이션 한 유저 유저 전투 기록 조회
   async getBattleLogsByUser(userId: string, page = 1, limit = 10) {
     const [data, total] = await this.battleLogRepository.findAndCount({
       where: [
         { player1: { id: userId } },
-        { player2: { id: userId } },
+        { player2: { id: userId } }
       ],
       relations: ['player1', 'player2', 'winner'],
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
-
+    console.log('total',total);
+    console.log('data',data);
+     // 데이터가 없을 경우 처리
+  if (total === 0) {
+    return {
+      message: '해당 유저의 전투 기록이 없습니다.',
+      total,
+      page,
+      limit,
+      data,
+    };
+  }
     return {
       total,
       page,

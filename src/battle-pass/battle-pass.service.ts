@@ -65,36 +65,41 @@ export class BattlePassService {
   async completeMission(userId: string, missionId: number) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-
+  
     const pass = await this.battlePassRepo.findOne({
       where: { user: { id: userId } },
     });
     if (!pass) throw new NotFoundException('Battle Pass not found');
-
+  
     const mission = await this.missionRepo.findOne({
       where: { id: missionId },
-      relations: ['rewards'],
+      relations: ['rewards', 'battlePass'], 
     });
-    if (!mission || mission.battlePass.id !== pass.id) {
+  
+    if (!mission || mission.battlePass?.id !== pass.id) {
       throw new BadRequestException('Invalid mission for user');
     }
-
+  
     if (mission.is_completed) {
       throw new BadRequestException('Mission already completed');
     }
-
+  
     mission.is_completed = true;
     await this.missionRepo.save(mission);
-
+  
+    if (!mission.rewards || mission.rewards.length === 0) {
+      throw new BadRequestException('No rewards available for this mission');
+    }
+  
     for (const reward of mission.rewards) {
       if (reward.is_premium && !pass.is_premium) continue;
-
+  
       if (reward.reward_type === 'gold') user.gold += reward.amount;
       else if (reward.reward_type === 'diamond') user.diamond += reward.amount;
       // TODO: 카드나 다른 보상도 필요 시 처리
     }
     await this.userRepo.save(user);
-
+  
     return { message: '보상이 지급되었습니다.', rewards: mission.rewards };
   }
 }

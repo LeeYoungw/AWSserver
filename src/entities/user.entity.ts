@@ -5,6 +5,7 @@ import {
   OneToMany,
   CreateDateColumn,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { BattleLog } from './battle-log.entity';
 import { BattlePass } from './battle-pass.entity';
@@ -75,7 +76,9 @@ export class User {
 
   @OneToMany(() => ShopPurchaseLog, (log) => log.user)
   purchaseLogs: ShopPurchaseLog[];
-  
+
   @OneToOne(() => BattleStatistics, (stats) => stats.user)
-statistics: BattleStatistics;
+  @JoinColumn()  // 명시적으로 외래키 설정
+  statistics: BattleStatistics;
 }
+

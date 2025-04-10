@@ -17,7 +17,7 @@ export class ShopService {
     @InjectRepository(Card) private readonly cardRepo: Repository<Card>,
     @InjectRepository(UserCard) private readonly userCardRepo: Repository<UserCard>,
   ) {}
-
+  // 상점 아이템 생성성
   async generateShopItems(userId: string) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new Error('User not found');
@@ -42,7 +42,7 @@ export class ShopService {
     });
     return await this.poolRepo.save(newItems);
   }
-
+  
   async getShopItems(userId: string) {
     const now = new Date();
     return this.poolRepo.find({
