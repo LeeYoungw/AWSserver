@@ -24,22 +24,11 @@ export class LobbyService {
     if (!user) {
       throw new NotFoundException('유저를 찾을 수 없습니다.');
     }
-
-    // 2. 배틀 로그 조회 -> 이것도 수정?
-    const battleLogs = await this.battleLogRepository.find({
-      where: [
-        { player1: { id: uid } },
-        { player2: { id: uid } },
-      ],
-      relations: ['player1', 'player2', 'winner'],
-      order: { created_at: 'DESC' },
-    });
-
-    // 3. 배틀 패스 조회
+    // 2. 배틀 패스 조회
     const battlePass = await this.battlePassRepository.findOne({
       where: { user: { id: uid } },
     });
-    // 수정해야 할 부분들?
+
     return {
       id: user.id,
       email: user.email,
@@ -49,10 +38,8 @@ export class LobbyService {
       gold: user.gold,
       diamond: user.diamond,
       last_login: user.last_login,
-      created_at: user.created_at,
       streak: user.streak,
       total_attendance: user.total_attendance,
-      battle_logs: battleLogs,
       battle_pass: battlePass
         ? {
             level: battlePass.battle_pass_level,
@@ -63,4 +50,3 @@ export class LobbyService {
     };
   }
 }
-

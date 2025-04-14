@@ -26,9 +26,9 @@ import {
   
     @Column({ default: false })
     upgradeable: boolean;
-    
-    @Column({ default: 0 })
-    xp: number;
+
+    @Column({default : 0})
+    usage_count: number;
 
   }
   

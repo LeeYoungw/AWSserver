@@ -46,7 +46,10 @@ export class BattleLogController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
-    return this.battleLogService.getBattleLogsByUser(userId, +page, +limit);
+    console.log('userid', userId);
+    console.log('page',page);
+    console.log('limit',limit);
+    return this.battleLogService.getBattleLogsByUser(userId, page, limit);
   }
 }
 

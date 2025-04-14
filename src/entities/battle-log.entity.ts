@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -15,11 +16,13 @@ export class BattleLog {
   @ManyToOne(() => User, (user) => user.battleLogsAsPlayer1, {
     onDelete: 'CASCADE',
   })
+  @Index()
   player1: User;
 
   @ManyToOne(() => User, (user) => user.battleLogsAsPlayer2, {
     onDelete: 'CASCADE',
   })
+  @Index()
   player2: User;
 
   @ManyToOne(() => User, (user) => user.battleLogsAsWinner, {

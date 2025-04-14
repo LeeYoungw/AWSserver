@@ -71,9 +71,9 @@ export class ShopService {
     // 카드 지급 (이미 있으면 수량 증가)
     let userCard = await this.userCardRepo.findOne({ where: { user: { id: userId }, card: { id: item.card.id } } });
     if (userCard) {
-      userCard.xp += item.quantity;
+      userCard.quantity += item.quantity;
     } else {
-      userCard = this.userCardRepo.create({ user, card: item.card, xp: item.quantity });
+      userCard = this.userCardRepo.create({ user, card: item.card, quantity: item.quantity });
     }
     await this.userCardRepo.save(userCard);
 

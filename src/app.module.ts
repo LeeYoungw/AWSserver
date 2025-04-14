@@ -46,7 +46,7 @@ import { BattlePassReward } from './entities/battle-pass-reward.entity';
       database: 'gametable',
       synchronize: false,
       autoLoadEntities: true,
-      logging: true,
+      logging: false,
       entities: [
         Civilization,
         CardLevelStats,

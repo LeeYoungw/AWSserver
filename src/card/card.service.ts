@@ -47,11 +47,11 @@ export class CardService {
     if (!userCard) throw new NotFoundException('해당 카드를 보유하고 있지 않습니다.');
 
     // 업그레이드 조건: 최소 XP 5 이상
-    if (userCard.xp < 5) throw new BadRequestException('카드 업그레이드 조건을 충족하지 않습니다.');
+    if (userCard.quantity < 5) throw new BadRequestException('카드 업그레이드 조건을 충족하지 않습니다.');
 
     // 업그레이드 처리
     userCard.level += 1;
-    userCard.xp -= 5;  // 5 XP 소모
+    userCard.quantity -= 5;  // 5 XP 소모
     return this.userCardRepo.save(userCard);
   }
 
@@ -85,7 +85,6 @@ export class CardService {
         level: 1,  // 기본적으로 레벨 1로 설정
         quantity: 1,
         upgradeable: false,
-        xp: 0,
       });
     }
 
