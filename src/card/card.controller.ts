@@ -15,7 +15,7 @@ import {
   ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
-import { AcquireCardDto } from '../dto/card.dto';
+import { AcquireCardDto } from '../dto/AcquireCard.dto';
 import { UserCard } from '../entities/user-card.entity';
 
 @ApiTags('Card')
@@ -41,7 +41,8 @@ export class CardController {
   @ApiBody({ type: AcquireCardDto })
   @Post('acquire')
   async acquireCard(@Body() acquireCardDto: AcquireCardDto): Promise<UserCard> {
-      return this.cardService.acquireCard(acquireCardDto);
+    // Body로부터 userId, cardId를 받아 CardService의 acquireCard 메서드 호출
+    return this.cardService.acquireCard(acquireCardDto);
   }
 
   @ApiOperation({ summary: '카드 상세 정보 확인' })

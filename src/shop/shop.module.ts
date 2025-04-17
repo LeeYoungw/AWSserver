@@ -8,7 +8,7 @@ import { ShopPurchaseLog } from '../entities/shop-purchase-log.entity';
 import { Card } from '../entities/card.entity';
 import { User } from '../entities/user.entity';
 import { UserCard } from '../entities/user-card.entity';
-
+import { CardModule } from '../card/card.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -18,6 +18,7 @@ import { UserCard } from '../entities/user-card.entity';
       User,
       UserCard,
     ]),
+    CardModule,
   ],
   controllers: [ShopController],
   providers: [ShopService],

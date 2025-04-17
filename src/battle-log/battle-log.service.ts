@@ -101,29 +101,29 @@ export class BattleLogService {
 
   // 페이지네이션 기반 유저 전투 기록 조회 (민감 정보 제거 및 추가 정보 포함)
   async getBattleLogsByUser(userId: string, page = 1, limit = 10) {
-    console.log('userId:', userId);
-    console.log('page:', page);
-    console.log('limit:', limit);
-    
-    // 플레이어1, 플레이어2의 덱 및 카드 정보를 함께 조회합니다.
-    const [logs, total] = await this.battleLogRepository.findAndCount({
-      where: [
-        { player1: { id: userId } },
-        { player2: { id: userId } }
-      ],
-      relations: [
-        'player1', 'player1.decks', 'player1.decks.cards',
-        'player2', 'player2.decks', 'player2.decks.cards',
-        'winner'
-      ],
-      order: { created_at: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    console.log('total:', total);
-    console.log('logs:', logs);
-
+    const query = this.battleLogRepository
+      .createQueryBuilder('battle')
+      .leftJoinAndSelect('battle.player1', 'player1')
+      .leftJoinAndSelect('battle.player2', 'player2')
+      .leftJoinAndSelect('battle.winner', 'winner')
+  
+      // player1의 덱과 덱 슬롯, 슬롯에 연결된 카드
+      .leftJoinAndSelect('player1.decks', 'player1Decks')
+      .leftJoinAndSelect('player1Decks.slots', 'player1Slots')
+      .leftJoinAndSelect('player1Slots.card', 'player1Cards')
+  
+      // player2의 덱과 덱 슬롯, 슬롯에 연결된 카드
+      .leftJoinAndSelect('player2.decks', 'player2Decks')
+      .leftJoinAndSelect('player2Decks.slots', 'player2Slots')
+      .leftJoinAndSelect('player2Slots.card', 'player2Cards')
+  
+      .where('player1.id = :userId OR player2.id = :userId', { userId })
+      .orderBy('battle.created_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+  
+    const [logs, total] = await query.getManyAndCount();
+  
     if (total === 0) {
       return {
         message: '해당 유저의 전투 기록이 없습니다.',
@@ -133,50 +133,36 @@ export class BattleLogService {
         data: [],
       };
     }
-
-    // 각 배틀 로그 데이터를 가공하여 응답에 필요한 정보만 반환합니다.
+  
     const transformedLogs = logs.map(log => {
-      // 승패 결과: 승자 id가 현재 유저이면 'win', 그렇지 않으면 'loss'
-      const outcome = (log.winner && log.winner.id === userId) ? 'win' : 'loss';
-
-      // 자기 덱과 상대 덱 구분
-      // 타입을 명시적으로 지정해서 빈 배열을 선언합니다.
-      let myDecks: any[] = [];
-      let opponentDecks: any[] = [];
-      if (log.player1.id === userId) {
-        myDecks = log.player1.decks || [];
-        opponentDecks = log.player2.decks || [];
-      } else {
-        myDecks = log.player2.decks || [];
-        opponentDecks = log.player1.decks || [];
-      }
-
-      // 덱 정보 변환 함수: 각 덱의 id, name, 포함된 카드 정보(카드 id, name, level)를 추출합니다.
+      const outcome = log.winner?.id === userId ? 'win' : 'loss';
+      const isPlayer1 = log.player1.id === userId;
+      const myDecks = isPlayer1 ? log.player1.decks : log.player2.decks;
+      const opponentDecks = isPlayer1 ? log.player2.decks : log.player1.decks;
+  
       const transformDecks = (decks: any[]) =>
         decks.map(deck => ({
           id: deck.id,
           name: deck.name,
-          cards: deck.cards
-            ? deck.cards.map(card => ({
-                id: card.id,
-                name: card.name,
-                level: card.level || null,
-              }))
-            : [],
+          cards: deck.slots?.map(slot => ({
+            id: slot.card?.id,
+            name: slot.card?.name,
+            level: slot.card?.level || null,
+          })) || [],
         }));
-
+  
       return {
         id: log.id,
-        outcome,                        // 승패 결과
-        trophies_change: log.trophies_change,   // 트로피 증감
-        card_change: log.card_change,             // 카드 변화
-        gold_change: log.gold_change,             // 골드 변화
-        battle_record_time: log.created_at,       // 전투 기록 시각
-        my_decks: transformDecks(myDecks),         // 자기 덱 정보
-        opponent_decks: transformDecks(opponentDecks), // 상대 덱 정보
+        outcome,
+        trophies_change: log.trophies_change,
+        card_change: log.card_change,
+        gold_change: log.gold_change,
+        battle_record_time: log.created_at,
+        my_decks: transformDecks(myDecks),
+        opponent_decks: transformDecks(opponentDecks),
       };
     });
-
+  
     return {
       total,
       page,
@@ -184,4 +170,5 @@ export class BattleLogService {
       data: transformedLogs,
     };
   }
+  
 }

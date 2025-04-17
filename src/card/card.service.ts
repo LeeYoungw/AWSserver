@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Card } from '../entities/card.entity';
 import { UserCard } from '../entities/user-card.entity';
 import { User } from '../entities/user.entity';
-import { AcquireCardDto } from '../dto/card.dto';
+import { AcquireCardDto } from '../dto/AcquireCard.dto';
 
 @Injectable()
 export class CardService {
@@ -57,7 +57,8 @@ export class CardService {
 
   // 카드 획득
   async acquireCard(acquireCardDto: AcquireCardDto): Promise<UserCard> {
-    const { userId, cardId } = acquireCardDto;
+    const { userId, cardId, quantity } = acquireCardDto;
+    const addQuantity = quantity || 1;
 
     // 사용자가 존재하는지 확인
     const user = await this.userRepo.findOne({ where: { id: userId } });
@@ -76,14 +77,14 @@ export class CardService {
 
     if (userCard) {
       // 이미 가지고 있는 카드라면 수량만 증가시키기
-      userCard.quantity += 1;
+      userCard.quantity += addQuantity;
     } else {
       // 새로운 카드 획득
       userCard = this.userCardRepo.create({
         user,
         card,
         level: 1,  // 기본적으로 레벨 1로 설정
-        quantity: 1,
+        quantity: addQuantity,
         upgradeable: false,
       });
     }

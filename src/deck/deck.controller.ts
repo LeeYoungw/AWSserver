@@ -46,25 +46,38 @@ export class DeckController {
   }
 
   @ApiOperation({ summary: '덱 삭제' })
-  @ApiParam({ name: 'deckId', type: Number, description: '삭제할 덱 ID' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         userId: {
           type: 'string',
-          example: 'user-uuid',
+          example: '67a7e7e6-91fe-41c7-ba55-a3dd948f7771',
           description: '유저 ID',
+        },
+        deckName: {
+          type: 'string',
+          example: 'My Deck',
+          description: '삭제할 덱의 이름',
         },
       },
     },
   })
   @ApiResponse({ status: 200, description: '삭제 성공 메시지 또는 결과' })
-  @Delete(':deckId')
-  deleteDeck(
-    @Param('deckId') deckId: number,
-    @Body('userId') userId: string,
-  ) {
-    return this.deckService.deleteDeck(deckId, userId);
+  @Delete()
+  deleteDeck(@Body() body: { userId: string; deckName: string }) {
+    const { userId, deckName } = body;
+    return this.deckService.deleteDeckByName(userId, deckName);
   }
+  @ApiOperation({ summary: '덱 선택 및 슬롯/이름 교환 처리' })
+  @ApiParam({ name: 'userId', type: String, description: '유저 ID' })
+  @ApiParam({ name: 'deckId', type: Number, description: '선택할 덱 ID' })
+  @ApiResponse({ status: 200, description: '덱 선택 완료 메시지' })
+  @Post('select/:userId/:deckId')
+  selectDeck(
+    @Param('userId') userId: string,
+    @Param('deckId') deckId: number,
+  ) {
+    return this.deckService.selectDeck(userId, deckId);
+  }  
 }
