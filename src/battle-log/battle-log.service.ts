@@ -104,18 +104,15 @@ export class BattleLogService {
     const query = this.battleLogRepository
       .createQueryBuilder('battle')
       .leftJoinAndSelect('battle.player1', 'player1')
-      .leftJoinAndSelect('battle.player2', 'player2')
-      .leftJoinAndSelect('battle.winner', 'winner')
-  
-      // player1의 덱과 덱 슬롯, 슬롯에 연결된 카드
       .leftJoinAndSelect('player1.decks', 'player1Decks')
       .leftJoinAndSelect('player1Decks.slots', 'player1Slots')
       .leftJoinAndSelect('player1Slots.card', 'player1Cards')
-  
-      // player2의 덱과 덱 슬롯, 슬롯에 연결된 카드
+      .leftJoinAndSelect('battle.player2', 'player2')
       .leftJoinAndSelect('player2.decks', 'player2Decks')
       .leftJoinAndSelect('player2Decks.slots', 'player2Slots')
       .leftJoinAndSelect('player2Slots.card', 'player2Cards')
+      .leftJoinAndSelect('battle.winner', 'winner')
+      
   
       .where('player1.id = :userId OR player2.id = :userId', { userId })
       .orderBy('battle.created_at', 'DESC')
@@ -164,9 +161,6 @@ export class BattleLogService {
     });
   
     return {
-      total,
-      page,
-      limit,
       data: transformedLogs,
     };
   }

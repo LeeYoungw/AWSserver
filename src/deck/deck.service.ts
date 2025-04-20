@@ -94,45 +94,44 @@ export class DeckService {
   // 특정 덱 선택 (선택한 덱 외에는 is_selected = false 처리)
 // 그리고 deckId가 1인 덱과 정보(이름, 슬롯 등) 교환
 async selectDeck(userId: string, deckId: number): Promise<string> {
-  const user = await this.userRepo.findOne({
-    where: { id: userId },
-    relations: ['decks'],
+  // 선택한 덱을 직접 조회
+  const selectedDeck = await this.deckRepo.findOne({
+    where: { id: deckId, user: { id: userId } },
+    relations: ['slots', 'user'],
   });
-  if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
-
-  const selectedDeck = user.decks.find(deck => deck.id === deckId);
   if (!selectedDeck) throw new NotFoundException('선택한 덱을 찾을 수 없습니다.');
 
-  const deckWithId1 = user.decks.find(deck => deck.id === 1);
+  // 유저의 모든 덱 가져오기
+  const userDecks = await this.deckRepo.find({
+    where: { user: { id: userId } },
+    relations: ['slots'],
+  });
+
+  // 덱 ID가 1인 덱 찾아오기
+  const deckWithId1 = userDecks.find(deck => deck.id === 1);
+
+  // 선택한 덱과 1번 덱이 다르면 슬롯 및 이름 교환
   if (deckWithId1 && deckWithId1.id !== selectedDeck.id) {
-    // 슬롯 포함 전체 덱 불러오기
-    const fullDeckA = await this.deckRepo.findOne({ where: { id: selectedDeck.id }, relations: ['slots'] });
-    const fullDeckB = await this.deckRepo.findOne({ where: { id: 1 }, relations: ['slots'] });
+    // 슬롯 및 정보 교환
+    const tempSlots = deckWithId1.slots;
+    const tempName = deckWithId1.name;
+    const tempIsSelected = deckWithId1.is_selected;
 
-    if (!fullDeckA || !fullDeckB) throw new NotFoundException('덱 데이터를 완전히 가져오지 못했습니다.');
+    deckWithId1.name = selectedDeck.name;
+    deckWithId1.slots = selectedDeck.slots;
+    deckWithId1.is_selected = selectedDeck.is_selected;
 
-    // 슬롯 정보 백업
-    const tempSlots = fullDeckA.slots;
-    const tempName = fullDeckA.name;
-    const tempSelected = fullDeckA.is_selected;
+    selectedDeck.name = tempName;
+    selectedDeck.slots = tempSlots;
+    selectedDeck.is_selected = tempIsSelected;
 
-    // 서로 정보 바꾸기
-    fullDeckA.name = fullDeckB.name;
-    fullDeckA.is_selected = fullDeckB.is_selected;
-    fullDeckA.slots = fullDeckB.slots;
-
-    fullDeckB.name = tempName;
-    fullDeckB.is_selected = tempSelected;
-    fullDeckB.slots = tempSlots;
-
-    await this.deckRepo.save([fullDeckA, fullDeckB]);
+    await this.deckRepo.save([deckWithId1, selectedDeck]);
   }
 
-  // 모든 덱 is_selected false로 초기화 후 선택한 덱만 true
-  for (const deck of user.decks) {
-    deck.is_selected = (deck.id === deckId);
+    for (const deck of userDecks) {
+    deck.is_selected = (deck.id === 1);
   }
-  await this.deckRepo.save(user.decks);
+  await this.deckRepo.save(userDecks);
 
   return `덱 ID ${deckId}가 선택되었습니다.`;
 }
