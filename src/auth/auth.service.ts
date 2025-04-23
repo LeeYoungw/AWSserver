@@ -82,4 +82,31 @@ export class AuthService {
       throw new InternalServerErrorException(`Firebase 처리 오류: ${error.message}`);
     }
   }
+
+  async googleLogin(idToken: string): Promise<{ customToken: string }> {
+    try {
+      // 클라에서 보낸 idtoken 확인
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      const { uid, email } = decoded;
+      // 디비에 현재 구글로 로그인한 유저가 있는지 확인
+      let user = await this.userRepository.findOne({ where: { id: uid } });
+      // 없다면 회원가입 처리리
+      if (!user) {
+        user = this.userRepository.create({
+          id: uid,
+          email,
+          password: '',
+        });
+        // 보통 회원가입 처리와 같이 배틀패스 생성해줌
+        user = await this.userRepository.save(user);
+        const battlePass = this.battlePassRepo.create({ user });
+        await this.battlePassRepo.save(battlePass);
+      }
+      // 커스텀토큰 생성 후 리턴해줌줌
+      const customToken = await this.generateCustomToken(uid);
+      return { customToken };
+    } catch (error) {
+      throw new UnauthorizedException('구글 로그인 실패: ' + error.message);
+    }
+  }
 }

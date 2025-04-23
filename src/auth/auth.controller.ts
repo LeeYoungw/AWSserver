@@ -41,4 +41,19 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
   }
+
+  @ApiOperation({ summary: '구글 로그인' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        idToken: { type: 'string', example: 'Google에서 받은 ID Token' },
+      },
+    },
+  })
+  @Post('google')
+  async googleLogin(@Body('idToken') idToken: string) {
+    return this.authService.googleLogin(idToken);
+  }
 }
+
