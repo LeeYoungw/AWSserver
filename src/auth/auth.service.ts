@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
 import { BattlePass } from '../entities/battle-pass.entity';
 import { v4 as uuidv4 } from 'uuid';
-
+import axios from 'axios';
 @Injectable()
 export class AuthService {
   constructor(
@@ -85,28 +85,37 @@ export class AuthService {
 
   async googleLogin(idToken: string): Promise<{ customToken: string }> {
     try {
-      // 클라에서 보낸 idtoken 확인
-      const decoded = await admin.auth().verifyIdToken(idToken);
-      const { uid, email } = decoded;
+      // Google OAuth2 tokeninfo endpoint로 ID 토큰 검증
+      const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      const { sub: uid, email } = response.data;
+  
+      if (!uid || !email) {
+        throw new Error('ID 토큰 검증 실패: UID 또는 이메일 없음');
+      }
+  
       // 디비에 현재 구글로 로그인한 유저가 있는지 확인
       let user = await this.userRepository.findOne({ where: { id: uid } });
-      // 없다면 회원가입 처리리
+  
+      // 없다면 회원가입 처리
       if (!user) {
         user = this.userRepository.create({
           id: uid,
           email,
-          password: '',
+          password: '', // OAuth 기반 로그인은 비밀번호 미사용이다다
         });
-        // 보통 회원가입 처리와 같이 배틀패스 생성해줌
         user = await this.userRepository.save(user);
+  
         const battlePass = this.battlePassRepo.create({ user });
         await this.battlePassRepo.save(battlePass);
       }
-      // 커스텀토큰 생성 후 리턴해줌줌
+  
+      // Firebase 커스텀 토큰 생성 
       const customToken = await this.generateCustomToken(uid);
       return { customToken };
-    } catch (error) {
+    } 
+    catch (error) {
       throw new UnauthorizedException('구글 로그인 실패: ' + error.message);
     }
   }
-}
+  }
+

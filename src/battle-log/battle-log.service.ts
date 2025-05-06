@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BattleLog } from '../entities/battle-log.entity';
@@ -86,24 +86,27 @@ export class BattleLogService {
   }
 
   async getBattleLogsByUser(userId: string, page = 1, limit = 10) {
-    const query = this.battleLogRepository
-      .createQueryBuilder('battle')
-      .leftJoinAndSelect('battle.player1', 'player1')
-      .leftJoinAndSelect('player1.decks', 'player1Decks')
-      .leftJoinAndSelect('player1Decks.slots', 'player1Slots')
-      .leftJoinAndSelect('player1Slots.card', 'player1Cards')
-      .leftJoinAndSelect('battle.player2', 'player2')
-      .leftJoinAndSelect('player2.decks', 'player2Decks')
-      .leftJoinAndSelect('player2Decks.slots', 'player2Slots')
-      .leftJoinAndSelect('player2Slots.card', 'player2Cards')
-      .leftJoinAndSelect('battle.winner', 'winner')
-      .where('player1.id = :userId OR player2.id = :userId', { userId })
-      .orderBy('battle.created_at', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
-
-    const [logs, total] = await query.getManyAndCount();
-
+    const [logs, total] = await this.battleLogRepository.findAndCount({
+      where: [
+        { player1: { id: userId } },
+        { player2: { id: userId } },
+      ],
+      relations: [
+        'player1',
+        'player1.decks',
+        'player1.decks.slots',
+        'player1.decks.slots.card',
+        'player2',
+        'player2.decks',
+        'player2.decks.slots',
+        'player2.decks.slots.card',
+        'winner',
+      ],
+      order: { created_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  
     if (total === 0) {
       return {
         message: '해당 유저의 전투 기록이 없습니다.',
@@ -113,29 +116,33 @@ export class BattleLogService {
         data: [],
       };
     }
-
-    const transformDecks = (decks: any[] = []) =>
-      decks.map(deck => ({
+  
+    const transformDecks = (decks?: any[]) => {
+      if (!Array.isArray(decks)) {
+        return [];  // decks가 undefined/null이면 빈 배열 반환
+      }
+    
+      return decks.map(deck => ({
         id: deck.id,
         name: deck.name,
         cards: Array.isArray(deck.slots)
           ? deck.slots.map(slot => ({
-              id: slot.card?.id,
-              name: slot.card?.name,
-              level: slot.card?.level || null,
+              id: slot.card?.id ?? null,
+              name: slot.card?.name ?? null,
+              level: slot.card?.level ?? null,
             }))
-          : [], // ← deck.slots가 undefined거나 null일 때 빈 배열 반환
+          : [],
       }));
-
+    };
+  
     const transformedLogs = logs.map(log => {
-      const outcome = log.winner?.id === userId ? 'win' : 'loss';
       const isPlayer1 = log.player1.id === userId;
       const myDecks = isPlayer1 ? log.player1.decks : log.player2.decks;
       const opponentDecks = isPlayer1 ? log.player2.decks : log.player1.decks;
-
+  
       return {
         id: log.id,
-        outcome,
+        outcome: log.winner?.id === userId ? 'win' : 'loss',
         trophies_change: log.trophies_change,
         card_change: log.card_change,
         gold_change: log.gold_change,
@@ -144,12 +151,12 @@ export class BattleLogService {
         opponent_decks: transformDecks(opponentDecks),
       };
     });
-
+  
     return {
       total,
       page,
       limit,
       data: transformedLogs,
     };
-  }
+  }  
 }

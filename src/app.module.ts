@@ -34,7 +34,8 @@ import { ShopPurchaseLog } from './entities/shop-purchase-log.entity';
 import { BattleStatistics } from './entities/battle-statistics.entity';
 import { BattlePassMission } from './entities/battle-pass-mission.entity';
 import { BattlePassReward } from './entities/battle-pass-reward.entity';
-
+import { PurchaseLog } from './entities/PurchaseLog.entity';
+import { PurchaseModule } from './purchase/purchase.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -61,6 +62,7 @@ import { BattlePassReward } from './entities/battle-pass-reward.entity';
         BattleStatistics,
         BattlePassMission,
         BattlePassReward,
+        PurchaseLog
       ],
     }),
     AuthModule,
@@ -71,6 +73,7 @@ import { BattlePassReward } from './entities/battle-pass-reward.entity';
     CardModule,
     BattlePassModule,
     BattleStatisticsModule,
+    PurchaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

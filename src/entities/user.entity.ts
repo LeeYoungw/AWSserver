@@ -14,6 +14,7 @@ import { UserDeck } from './user-deck.entity';
 import { ShopItemsPool } from './shop-items-pool.entity';
 import { ShopPurchaseLog } from './shop-purchase-log.entity';
 import { BattleStatistics } from './battle-statistics.entity';
+import { PurchaseLog } from './PurchaseLog.entity';
 
 @Entity('users')
 export class User {
@@ -39,7 +40,7 @@ export class User {
   diamond: number;
 
   @Column({ default: 0 })
-  exp: number; 
+  exp: number;
 
   @Column({ type: 'timestamp', nullable: true })
   last_login: Date;
@@ -75,10 +76,12 @@ export class User {
   shopItems: ShopItemsPool[];
 
   @OneToMany(() => ShopPurchaseLog, (log) => log.user)
-  purchaseLogs: ShopPurchaseLog[];
+  shopPurchaseLogs: ShopPurchaseLog[];
+
+  @OneToMany(() => PurchaseLog, (log) => log.user)
+  googlePurchaseLogs: PurchaseLog[];
 
   @OneToOne(() => BattleStatistics, (stats) => stats.user)
-  @JoinColumn()  // 명시적으로 외래키 설정
+  @JoinColumn()
   statistics: BattleStatistics;
 }
-
