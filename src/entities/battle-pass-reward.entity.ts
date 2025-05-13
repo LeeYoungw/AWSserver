@@ -24,5 +24,8 @@ import {
   
     @Column({ type: 'tinyint', default: 0 }) // 0 = 무료, 1 = 유료
     is_premium: boolean;
+
+    @Column({ default: 1 })
+    season: number;
   }
   

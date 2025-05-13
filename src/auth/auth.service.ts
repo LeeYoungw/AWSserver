@@ -11,8 +11,11 @@ import * as admin from 'firebase-admin';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
 import { BattlePass } from '../entities/battle-pass.entity';
+import { DailyMission } from 'src/entities/daily_mission.entity';
+import { UserDailyMission } from 'src/entities/user_daily_mission.entity';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -21,6 +24,12 @@ export class AuthService {
 
     @InjectRepository(BattlePass)
     private battlePassRepo: Repository<BattlePass>,
+
+    @InjectRepository(DailyMission)
+    private dailyMissionRepo: Repository<DailyMission>,
+
+    @InjectRepository(UserDailyMission)
+    private userDailyMissionRepo: Repository<UserDailyMission>,
   ) {}
 
   async getAllUsers(): Promise<User[]> {
@@ -32,32 +41,49 @@ export class AuthService {
   }
 
   async register(email: string, password: string): Promise<User> {
-    const existingUser = await this.userRepository.findOne({ where: { email } });
-    if (existingUser) throw new ConflictException('이미 사용 중인 이메일입니다.');
+  const existingUser = await this.userRepository.findOne({ where: { email } });
+  if (existingUser) throw new ConflictException('이미 사용 중인 이메일입니다.');
 
-    try {
-      const firebaseUid = uuidv4();
+  try {
+    const firebaseUid = uuidv4();
 
-      await admin.auth().createUser({ uid: firebaseUid, email, password });
+    await admin.auth().createUser({ uid: firebaseUid, email, password });
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = this.userRepository.create({
-        id: firebaseUid,
-        email,
-        password: hashedPassword,
-      });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = this.userRepository.create({
+      id: firebaseUid,
+      email,
+      password: hashedPassword,
+    });
 
-      const savedUser = await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
 
-      //  회원가입 시 배틀패스 자동 생성
-      const battlePass = this.battlePassRepo.create({ user: savedUser });
-      await this.battlePassRepo.save(battlePass);
+    // ✅ 배틀패스 자동 생성
+    const battlePass = this.battlePassRepo.create({ user: savedUser });
+    await this.battlePassRepo.save(battlePass);
 
-      return savedUser;
-    } catch (error) {
-      throw new InternalServerErrorException('회원가입 중 오류가 발생했습니다.');
-    }
+    // ✅ 일일 미션 자동 생성
+    const missions = await this.dailyMissionRepo.find();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const userDailyMissions = missions.map((mission) =>
+      this.userDailyMissionRepo.create({
+        user: savedUser,
+        mission,
+        is_completed: false,
+        is_claimed: false,
+        date: today,
+      })
+    );
+
+    await this.userDailyMissionRepo.save(userDailyMissions);
+
+    return savedUser;
+  } catch (error) {
+    throw new InternalServerErrorException('회원가입 중 오류가 발생했습니다.');
   }
+}
 
   async generateCustomToken(uid: string): Promise<string> {
     try {

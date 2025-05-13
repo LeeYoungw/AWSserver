@@ -5,7 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import * as admin from 'firebase-admin';
 import { join } from 'path';
-
+import { ScheduleModule } from '@nestjs/schedule';
+import { DailyMissionScheduler } from './daily/DailymissionScheduler';
 // Firebase 설정
 const serviceAccount = require(join(process.cwd(), 'my-firebase-key.json'));
 
@@ -36,6 +37,9 @@ import { BattlePassMission } from './entities/battle-pass-mission.entity';
 import { BattlePassReward } from './entities/battle-pass-reward.entity';
 import { PurchaseLog } from './entities/PurchaseLog.entity';
 import { PurchaseModule } from './purchase/purchase.module';
+import { DailyMissionModule } from './daily/dailymission.module';
+import { DailyMission } from './entities/daily_mission.entity';
+import { UserDailyMission } from './entities/user_daily_mission.entity';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -62,9 +66,12 @@ import { PurchaseModule } from './purchase/purchase.module';
         BattleStatistics,
         BattlePassMission,
         BattlePassReward,
-        PurchaseLog
+        PurchaseLog,
+        DailyMission,
+        UserDailyMission
       ],
     }),
+    TypeOrmModule.forFeature([User, DailyMission, UserDailyMission]),
     AuthModule,
     BattleLogModule,
     UserModule,
@@ -74,9 +81,11 @@ import { PurchaseModule } from './purchase/purchase.module';
     BattlePassModule,
     BattleStatisticsModule,
     PurchaseModule,
+    ScheduleModule.forRoot(),
+    DailyMissionModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,DailyMissionScheduler],
 })
 export class AppModule {}
 

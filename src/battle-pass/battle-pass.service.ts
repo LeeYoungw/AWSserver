@@ -102,4 +102,18 @@ export class BattlePassService {
   
     return { message: '보상이 지급되었습니다.', rewards: mission.rewards };
   }
+
+  // 시즌별 배틀패스 보상 조회
+async getRewardsBySeason(season: number): Promise<BattlePassReward[]> {
+  const rewards = await this.rewardRepo.find({
+    where: { season }, // 시즌 컬럼이 추가되어 있어야 합니다
+    relations: ['mission'],
+  });
+
+  if (!rewards || rewards.length === 0) {
+    throw new NotFoundException(`시즌 ${season}에 대한 보상이 존재하지 않습니다.`);
+  }
+
+  return rewards;
+}
 }

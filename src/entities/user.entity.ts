@@ -15,7 +15,7 @@ import { ShopItemsPool } from './shop-items-pool.entity';
 import { ShopPurchaseLog } from './shop-purchase-log.entity';
 import { BattleStatistics } from './battle-statistics.entity';
 import { PurchaseLog } from './PurchaseLog.entity';
-
+import { UserDailyMission } from './user_daily_mission.entity';
 @Entity('users')
 export class User {
   @PrimaryColumn({ type: 'varchar', length: 50 })
@@ -84,4 +84,7 @@ export class User {
   @OneToOne(() => BattleStatistics, (stats) => stats.user)
   @JoinColumn()
   statistics: BattleStatistics;
+
+  @OneToMany(() => UserDailyMission, (mission) => mission.user)
+dailyMissions: UserDailyMission[];
 }
