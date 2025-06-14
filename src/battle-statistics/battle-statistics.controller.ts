@@ -11,6 +11,7 @@ export class BattleStatisticsController {
   @ApiOperation({
     summary: '유저 전투 통계 조회',
     description: `
+    - 유저 이름(닉네임)
     - 총 승리 수
     - 현재 트로피
     - 현재 사용 중인 덱 (1번 덱 기준) 정보
@@ -27,6 +28,7 @@ export class BattleStatisticsController {
     description: '유저 전투 통계 반환',
     schema: {
       example: {
+        nickname: '종민',
         totalWins: 15,
         trophies: 1280,
         averageManaCost: 3.6,

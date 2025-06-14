@@ -5,7 +5,9 @@ import { Card } from '../entities/card.entity';
 import { UserCard } from '../entities/user-card.entity';
 import { User } from '../entities/user.entity';
 import { AcquireCardDto } from '../dto/AcquireCard.dto';
-
+import { CardDetailResponseDto } from 'src/dto/response/card-detail-response.dto';
+import { Civilization } from 'src/entities/civilization.entity';
+import { UpgradeCardResponseDto,UserCardsWithTotalDto,UserCardResponseDto } from 'src/dto/response/UserCard-response.dto';
 @Injectable()
 export class CardService {
   constructor(
@@ -15,45 +17,99 @@ export class CardService {
     @InjectRepository(UserCard)
     private readonly userCardRepo: Repository<UserCard>,
 
+    @InjectRepository(Card)
+    private readonly cardrepository: Repository<Card>,
+
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
 
   // 유저의 모든 카드 가져옴
-  async getUserCards(userId: string, type?: string) {
-    const query = this.userCardRepo.createQueryBuilder('uc')
-      .leftJoinAndSelect('uc.card', 'card')
-      .where('uc.userId = :userId', { userId });
+async getUserCards(userId: string, type?: string): Promise<UserCardsWithTotalDto> {
+  const query = this.userCardRepo.createQueryBuilder('uc')
+    .leftJoinAndSelect('uc.card', 'card')
+    .where('uc.userId = :userId', { userId });
 
-    if (type) {
-      query.andWhere('card.type = :type', { type });
-    }
-
-    return query.getMany();
+  if (type) {
+    query.andWhere('card.type = :type', { type });
   }
 
-  // 카드 정보 조회
-  async getCardDetail(cardId: number) {
-    return this.cardRepo.findOne({ where: { id: cardId } });
-  }
+  const userCards = await query.getMany();
+  const totalCardCount = await this.cardRepo.count(); // 전체 카드 개수
+
+  return {
+    totalCardsInGame: totalCardCount,
+    userOwnedCardCount: userCards.length,
+    userCards: userCards.map((uc) => ({
+      id: uc.id,
+      level: uc.level,
+      quantity: uc.quantity,
+      upgradeable: uc.quantity >= 5,
+      card: {
+        id: uc.card.id,
+        name: uc.card.name,
+        type: uc.card.type,
+      },
+    })),
+  };
+}
+
+
+
+  async getCardDetail(cardId: number): Promise<CardDetailResponseDto> {
+  const card = await this.cardrepository.findOne({
+    where: { id: cardId },
+    relations: ['civilization'], // 문명 조인
+  });
+
+  if (!card) throw new NotFoundException('카드를 찾을 수 없습니다.');
+
+  return {
+    id: card.id,
+    name: card.name,
+    type: card.type,
+    mana_cost: card.mana_cost,
+    max_health: card.max_health,
+    attack: card.attack,
+    movement_speed: card.movement_speed,
+    attack_range: card.attack_range,
+    vision_range: card.vision_range,
+    attack_speed: card.attack_speed,
+    hitbox_size: card.hitbox_size,
+    summon_time: card.summon_time,
+    projectile_speed: card.projectile_speed,
+    civilization: card.civilization?.name ?? null, // 문명 이름 포함
+  };
+}
+
 
   // 카드 업그레이드
-  async upgradeCard(userId: string, cardId: number) {
-    const userCard = await this.userCardRepo.findOne({
-      where: { user: { id: userId }, card: { id: cardId } },
-      relations: ['card', 'user'],
-    });
+  async upgradeCard(userId: string, cardId: number): Promise<UpgradeCardResponseDto> {
+  const userCard = await this.userCardRepo.findOne({
+    where: { user: { id: userId }, card: { id: cardId } },
+    relations: ['card'],
+  });
 
-    if (!userCard) throw new NotFoundException('해당 카드를 보유하고 있지 않습니다.');
+  if (!userCard) throw new NotFoundException('해당 카드를 보유하고 있지 않습니다.');
+  if (userCard.quantity < 5) throw new BadRequestException('카드 업그레이드 조건을 충족하지 않습니다.');
 
-    // 업그레이드 조건: 최소 XP 5 이상
-    if (userCard.quantity < 5) throw new BadRequestException('카드 업그레이드 조건을 충족하지 않습니다.');
+  userCard.level += 1;
+  userCard.quantity -= 5;
 
-    // 업그레이드 처리
-    userCard.level += 1;
-    userCard.quantity -= 5;  // 5 XP 소모
-    return this.userCardRepo.save(userCard);
-  }
+  const saved = await this.userCardRepo.save(userCard);
+
+  return {
+    id: saved.id,
+    level: saved.level,
+    quantity: saved.quantity,
+    upgradeable: saved.quantity >= 5,
+    card: {
+      id: saved.card.id,
+      name: saved.card.name,
+      type: saved.card.type,
+    },
+  };
+}
 
   // 카드 획득
   async acquireCard(acquireCardDto: AcquireCardDto): Promise<UserCard> {

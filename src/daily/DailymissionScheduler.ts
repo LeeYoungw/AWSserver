@@ -19,7 +19,7 @@ export class DailyMissionScheduler {
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async resetDailyMissions() {
-    console.log('🎯 [스케줄러] 일일 미션 초기화 시작');
+    console.log(' [스케줄러] 일일 미션 초기화 시작');
 
     const users = await this.userRepo.find();
     const missions = await this.missionRepo.find();
@@ -45,7 +45,15 @@ export class DailyMissionScheduler {
         }
       }
     }
-
-    console.log('✅ [스케줄러] 일일 미션 초기화 완료');
+    await this.resetTodayWinCounts();
+    console.log(' [스케줄러] 일일 미션 초기화 완료');
   }
+  async resetTodayWinCounts() {
+  await this.userRepo.createQueryBuilder()
+    .update()
+    .set({ today_win_count: 0 })
+    .execute();
+  console.log(' 유저 today_win_count 초기화 완료');
+}
+
 }

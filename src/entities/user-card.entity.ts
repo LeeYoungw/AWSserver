@@ -29,7 +29,6 @@ import {
 
     @Column({default : 0})
     usage_count: number;
-
   }
   
 

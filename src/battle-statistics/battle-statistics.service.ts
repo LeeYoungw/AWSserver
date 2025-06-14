@@ -69,6 +69,7 @@ export class BattleStatisticsService {
     const ownedCards = user.cards.length;
 
     return {
+      nickname : user.user_nickname,
       totalWins,
       trophies: user.trophies,
       averageManaCost: averageMana,

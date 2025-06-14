@@ -31,6 +31,7 @@ export class LobbyService {
 
     return {
       id: user.id,
+      nickname : user.user_nickname,
       email: user.email,
       level: user.level,
       exp: user.exp,

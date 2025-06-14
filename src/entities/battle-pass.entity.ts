@@ -51,4 +51,8 @@ export class BattlePass {
     nullable: false,
   })
   last_updated: Date;
+
+@Column({ default: 1 })
+season: number;
+
 }

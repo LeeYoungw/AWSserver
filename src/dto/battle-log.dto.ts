@@ -18,4 +18,9 @@ export class CreateBattleLogDto {
 
   @ApiProperty({ example: 500, description: '골드 변화량' })
   gold_change: number;
+  @ApiProperty({ example: 1, description: '플레이어 1이 사용한 덱 ID', required: false })
+usedDeck1_id?: number;
+
+@ApiProperty({ example: 2, description: '플레이어 2가 사용한 덱 ID', required: false })
+usedDeck2_id?: number;
 }

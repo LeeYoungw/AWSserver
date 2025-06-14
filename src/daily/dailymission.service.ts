@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UserDailyMission } from '../entities/user_daily_mission.entity';
 import { DailyMission } from '../entities/daily_mission.entity';
+import { BattleLog } from '../entities/battle-log.entity';
+import { startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
 export class DailyMissionService {
@@ -16,6 +18,9 @@ export class DailyMissionService {
 
     @InjectRepository(DailyMission)
     private readonly missionRepo: Repository<DailyMission>,
+
+    @InjectRepository(BattleLog)
+    private readonly battleLogRepo: Repository<BattleLog>,
   ) {}
 
   async getUserDailyMissions(userId: string) {
@@ -27,7 +32,7 @@ export class DailyMissionService {
       relations: ['mission'],
     });
   }
-  // 보상 완료
+
   async completeMission(userId: string, missionId: number) {
     const mission = await this.userMissionRepo.findOne({
       where: { user: { id: userId }, mission: { id: missionId } },
@@ -55,7 +60,6 @@ export class DailyMissionService {
 
     mission.is_claimed = true;
 
-    // 보상 처리
     const user = mission.user;
     const reward = mission.mission;
 
@@ -66,6 +70,39 @@ export class DailyMissionService {
     await this.userMissionRepo.save(mission);
     await this.userRepo.save(user);
 
-    return { message: '보상이 지급되었습니다.', reward_type: reward.reward_type, amount: reward.reward_amount };
+    return {
+      message: '보상이 지급되었습니다.',
+      reward_type: reward.reward_type,
+      amount: reward.reward_amount,
+    };
+  }
+
+  // 배틀로그 관련 하루 승리 카운트 함수 활용 함수수
+  async evaluateWinMissions(userId: string) {
+  const user = await this.userRepo.findOne({ where: { id: userId } });
+  if (!user) throw new NotFoundException('User not found');
+
+  const winCount = user.today_win_count;
+  if (winCount >= 1) await this.markDailyMissionCompleted(userId, 'BATTLE_WIN');
+  if (winCount >= 2) await this.markDailyMissionCompleted(userId, 'BATTLE_WIN_X2');
+  if (winCount >= 3) await this.markDailyMissionCompleted(userId, 'BATTLE_WIN_X3');
+}
+  // 배틀로그 관련 미션 완료 함수
+  async markDailyMissionCompleted(userId: string, missionType: string) {
+    const today = new Date();
+    const missionEntry = await this.userMissionRepo.findOne({
+      where: {
+        user: { id: userId },
+        mission: { mission_type: missionType },
+        is_completed: false,
+        date: today,
+      },
+      relations: ['mission'],
+    });
+
+    if (missionEntry) {
+      missionEntry.is_completed = true;
+      await this.userMissionRepo.save(missionEntry);
+    }
   }
 }

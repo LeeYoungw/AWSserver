@@ -21,6 +21,9 @@ export class User {
   @PrimaryColumn({ type: 'varchar', length: 50 })
   id: string;
 
+  @Column()
+  user_nickname: string;
+
   @Column({ unique: true })
   email: string;
 
@@ -53,6 +56,9 @@ export class User {
 
   @Column({ default: 0 })
   total_attendance: number;
+
+  @Column({ type: 'int', default: 0 })
+  today_win_count: number;
 
   @OneToMany(() => BattleLog, (log) => log.player1)
   battleLogsAsPlayer1: BattleLog[];

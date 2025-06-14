@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
 import { BattleLogService } from './battle-log.service';
 import { CreateBattleLogDto } from '../dto/battle-log.dto';
+import { PaginatedBattleLogResponseDto } from 'src/dto/response/paginated-battle-log.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -16,19 +17,23 @@ export class BattleLogController {
   constructor(private readonly battleLogService: BattleLogService) {}
   
   @Get('oneuser')
-  @ApiOperation({ summary: '단일 유저 기준 배틀 로그 (페이지네이션)' })
-  @ApiQuery({ name: 'userId', description: '유저 ID', required: true })
-  @ApiQuery({ name: 'page', description: '페이지 번호', required: false, example: 1 })
-  @ApiQuery({ name: 'limit', description: '페이지당 개수', required: false, example: 10 })
-  @ApiResponse({ status: 200, description: '해당 유저의 배틀 로그 리스트' })
-  async getBattleLogsByUser(
-    @Query('userId') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ) {
-    if (!userId) throw new Error('userId 쿼리 파라미터는 필수입니다.');
-    return this.battleLogService.getBattleLogsByUser(userId, page, limit);
-  }
+@ApiOperation({ summary: '단일 유저 기준 배틀 로그 (페이지네이션)' })
+@ApiQuery({ name: 'userId', description: '유저 ID', required: true })
+@ApiQuery({ name: 'page', description: '페이지 번호', required: false, example: 1 })
+@ApiQuery({ name: 'limit', description: '페이지당 개수', required: false, example: 10 })
+@ApiResponse({
+  status: 200,
+  description: '해당 유저의 배틀 로그 리스트',
+  type: PaginatedBattleLogResponseDto,
+})
+async getBattleLogsByUser(
+  @Query('userId') userId: string,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 10,
+) {
+  if (!userId) throw new Error('userId 쿼리 파라미터는 필수입니다.');
+  return this.battleLogService.getBattleLogsByUser(userId, page, limit);
+}
 
   @Post('create')
   @ApiOperation({ summary: '배틀 로그 저장' })

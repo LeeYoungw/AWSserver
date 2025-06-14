@@ -40,6 +40,7 @@ import { PurchaseModule } from './purchase/purchase.module';
 import { DailyMissionModule } from './daily/dailymission.module';
 import { DailyMission } from './entities/daily_mission.entity';
 import { UserDailyMission } from './entities/user_daily_mission.entity';
+import { MatchModule } from './match/match.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -83,6 +84,7 @@ import { UserDailyMission } from './entities/user_daily_mission.entity';
     PurchaseModule,
     ScheduleModule.forRoot(),
     DailyMissionModule,
+    MatchModule,
   ],
   controllers: [AppController],
   providers: [AppService,DailyMissionScheduler],

@@ -9,6 +9,7 @@ import { UserCard } from '../entities/user-card.entity';
 import { CurrencyType } from '../entities/enum';
 import { MoreThan } from 'typeorm';
 import { CardService } from 'src/card/card.service';
+import { ShopItemResponseDto, PurchaseResponseDto } from 'src/dto/response/shopItem-response.dto';
 @Injectable()
 export class ShopService {
   constructor(
@@ -20,77 +21,110 @@ export class ShopService {
 
     private readonly cardService: CardService,
   ) {}
-  // 상점 아이템 생성
-  async generateShopItems(userId: string) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new Error('User not found');
+async generateShopItems(userId: string): Promise<ShopItemResponseDto[]> {
+  const user = await this.userRepo.findOne({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
 
-    // 기존 만료된 아이템 삭제
-    await this.poolRepo.delete({ user: { id: userId }, expires_at: LessThan(new Date()) });
+  await this.poolRepo.delete({
+    user: { id: userId },
+    expires_at: LessThan(new Date()),
+  });
 
-    const allCards = await this.cardRepo.find();
-    const selectedCards = allCards.sort(() => 0.5 - Math.random()).slice(0, 5); // 5개 랜덤 카드
+  const allCards = await this.cardRepo.find();
+  const selectedCards = allCards.sort(() => 0.5 - Math.random()).slice(0, 5);
 
-    const newItems = selectedCards.map((card) => {
-      return this.poolRepo.create({
-        user,
-        card,
-        quantity: Math.floor(Math.random() * 5) + 1,
-        price: Math.floor(Math.random() * 200) + 50,
-        currency: CurrencyType.GOLD,
-        created_at: new Date(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24시간 후 만료
-        is_purchased: false,
-      });
-    });
-    return await this.poolRepo.save(newItems);
-  }
-  
-  async getShopItems(userId: string) {
-    const now = new Date();
-    return this.poolRepo.find({
-      where: { user: { id: userId }, expires_at: MoreThan(now) },
-      relations: ['card'],
-    });
-  }
-
-  async purchaseItem(userId: string, itemId: number) {
-    // 1. 사용자 및 아이템 조회
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    const item = await this.poolRepo.findOne({ where: { id: itemId }, relations: ['card', 'user'] });
-    if (!user || !item) throw new NotFoundException('User or item not found');
-    if (item.user.id !== userId) throw new NotFoundException('Item does not belong to user');
-    if (item.is_purchased) throw new Error('Already purchased');
-
-    // 2. 가격 확인 및 골드 차감
-    if (item.currency === CurrencyType.GOLD && user.gold < item.price) {
-      throw new Error('Not enough gold');
-    }
-    user.gold -= item.price;
-    await this.userRepo.save(user);
-
-    // 3. 카드 획득 처리: CardService.acquireCard를 호출하여
-    //    - 만약 이미 해당 카드가 있다면 수량이 증가하고,
-    //    - 없으면 새로운 UserCard가 생성됩니다.
-    const acquiredCard = await this.cardService.acquireCard({
-      userId,
-      cardId: item.card.id,
-      quantity: item.quantity,
-    });
-
-    // 4. 구매 로그 기록
-    const log = this.logRepo.create({
+  const newItems = selectedCards.map((card) => {
+    return this.poolRepo.create({
       user,
-      item,
-      total_price: item.price,
-      currency: item.currency,
+      card,
+      quantity: Math.floor(Math.random() * 5) + 1,
+      price: Math.floor(Math.random() * 200) + 50,
+      currency: CurrencyType.GOLD,
+      created_at: new Date(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      is_purchased: false,
     });
-    await this.logRepo.save(log);
+  });
 
-    // 5. 아이템 구매 상태 업데이트
-    item.is_purchased = true;
-    await this.poolRepo.save(item);
+  const savedItems = await this.poolRepo.save(newItems);
 
-    return { message: '구매 완료', item, userCard: acquiredCard };
+  return savedItems.map((item) => ({
+    id: item.id,
+    quantity: item.quantity,
+    price: item.price,
+    currency: item.currency,
+    created_at: item.created_at.toISOString(),   
+    expires_at: item.expires_at.toISOString(),   
+    is_purchased: item.is_purchased,
+    card_id: item.card.id,
+    card_name: item.card.name,
+  }));
+}
+
+  async getShopItems(userId: string): Promise<ShopItemResponseDto[]> {
+  const now = new Date();
+  const items = await this.poolRepo.find({
+    where: { user: { id: userId }, expires_at: MoreThan(now) },
+    relations: ['card'],
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    quantity: item.quantity,
+    price: item.price,
+    currency: item.currency,
+    created_at : item.created_at.toISOString(),
+    expires_at: item.expires_at.toISOString(),
+    is_purchased: item.is_purchased,
+    card_id: item.card.id,
+    card_name: item.card.name,
+  }));
+}
+
+async purchaseItem(userId: string, itemId: number): Promise<PurchaseResponseDto> {
+  const user = await this.userRepo.findOne({ where: { id: userId } });
+  const item = await this.poolRepo.findOne({ where: { id: itemId }, relations: ['card', 'user'] });
+  if (!user || !item) throw new NotFoundException('User or item not found');
+  if (item.user.id !== userId) throw new NotFoundException('Item does not belong to user');
+  if (item.is_purchased) throw new Error('Already purchased');
+
+  if (item.currency === CurrencyType.GOLD && user.gold < item.price) {
+    throw new Error('Not enough gold');
   }
+  user.gold -= item.price;
+  await this.userRepo.save(user);
+
+  const acquiredCard = await this.cardService.acquireCard({
+    userId,
+    cardId: item.card.id,
+    quantity: item.quantity,
+  });
+
+  const log = this.logRepo.create({
+    user,
+    item,
+    total_price: item.price,
+    currency: item.currency,
+  });
+  await this.logRepo.save(log);
+
+  item.is_purchased = true;
+  await this.poolRepo.save(item);
+
+  return {
+    message: '구매 완료',
+    item: {
+      id: item.id,
+      quantity: item.quantity,
+      price: item.price,
+      currency: item.currency,
+      created_at: item.created_at.toISOString(),
+      expires_at: item.expires_at.toISOString(),
+      is_purchased: item.is_purchased,
+      card_id: item.card.id,
+      card_name: item.card.name,
+    },
+    userCard: acquiredCard,
+  };
+}
 }
