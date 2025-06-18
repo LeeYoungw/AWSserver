@@ -7,7 +7,7 @@ import { User } from '../entities/user.entity';
 import { UserCard } from '../entities/user-card.entity';
 import { DailyMissionService } from 'src/daily/dailymission.service';
 import { UserDeck } from 'src/entities/user-deck.entity';
-
+import { MatchStatus } from 'src/entities/match_status.entity';
 @Injectable()
 export class BattleLogService {
   constructor(
@@ -24,29 +24,41 @@ export class BattleLogService {
     @InjectRepository(UserCard)
     private readonly userCardRepository: Repository<UserCard>,
 
+    @InjectRepository(MatchStatus)
+    private readonly matchRepo: Repository<MatchStatus>,
+
     private readonly dailyMissionService: DailyMissionService,
   ) {}
 
-  async createBattleLog(createBattleLogDto: CreateBattleLogDto): Promise<BattleLog> {
-  const {
-    player1_id,
-    player2_id,
-    winner_id,
-    trophies_change,
-    card_change,
-    gold_change,
-  } = createBattleLogDto;
+async createBattleLogFromWinner(dto: CreateBattleLogDto): Promise<BattleLog> {
+  const { winnerId, isDraw } = dto;
 
-  const [player1, player2, winner] = await Promise.all([
+  // 매칭 정보 조회
+  const match = await this.matchRepo.findOne({
+    where: { playerId: winnerId },
+  });
+
+  if (!match || !match.opponentId) {
+    throw new NotFoundException('매칭 정보가 없습니다.');
+  }
+
+  const player1_id = winnerId;
+  const player2_id = match.opponentId;
+
+  // 유저 조회
+  const [player1, player2] = await Promise.all([
     this.userRepository.findOne({ where: { id: player1_id } }),
     this.userRepository.findOne({ where: { id: player2_id } }),
-    this.userRepository.findOne({ where: { id: winner_id } }),
   ]);
 
-  if (!player1 || !player2 || !winner) {
+  if (!player1 || !player2) {
     throw new NotFoundException('유저 정보를 찾을 수 없습니다.');
   }
 
+  // 무승부가 아니라면 승자 설정
+  const winner = isDraw ? null : player1;
+
+  // 사용한 덱 조회
   const [usedDeck1, usedDeck2] = await Promise.all([
     this.userdeckrepository.findOne({
       where: { user: { id: player1.id }, is_selected: true },
@@ -56,33 +68,51 @@ export class BattleLogService {
     }),
   ]);
 
+  // 보상 설정
+  const trophies_change = 30;
+  const card_change = 1;
+  const gold_change = 100;
+
+  // 배틀 로그 생성
   const battleLog = this.battleLogRepository.create({
-  player1,
-  player2,
-  winner,
-  trophies_change,
-  card_change,
-  gold_change,
-  usedDeck1,
-  usedDeck2,
-} as Partial<BattleLog>);
+    player1,
+    player2,
+    winner,
+    trophies_change,
+    card_change,
+    gold_change,
+    usedDeck1,
+    usedDeck2,
+  } as Partial<BattleLog>);
 
   const savedBattleLog = await this.battleLogRepository.save(battleLog);
 
-  //  트로피/골드 처리
-  const winnerPlayer = winner.id === player1.id ? player1 : player2;
-  const loserPlayer = winnerPlayer === player1 ? player2 : player1;
+  // 승패/무승부에 따른 보상 처리
+  if (!isDraw && winner) {
+    const loser = winner.id === player1.id ? player2 : player1;
 
-  winnerPlayer.gold += gold_change;
-  winnerPlayer.trophies += trophies_change;
-  winnerPlayer.today_win_count += 1;
+    winner.gold += gold_change;
+    winner.trophies += trophies_change;
+    winner.today_win_count += 1;
 
-  loserPlayer.gold -= gold_change;
-  loserPlayer.trophies -= trophies_change;
+    loser.gold -= gold_change;
+    loser.trophies -= trophies_change;
 
-  await this.userRepository.save([winnerPlayer, loserPlayer]);
+    await this.userRepository.save([winner, loser]);
+  } else {
+    const halfGold = Math.floor(gold_change / 2);
+    const halfTrophies = Math.floor(trophies_change / 2);
 
-  // 카드 사용량 증가 및 보상
+    player1.gold += halfGold;
+    player2.gold += halfGold;
+
+    player1.trophies += halfTrophies;
+    player2.trophies += halfTrophies;
+
+    await this.userRepository.save([player1, player2]);
+  }
+
+  // 카드 사용량 증가 및 보상 처리
   await Promise.all(
     [player1, player2].map(async (user) => {
       const userCards = await this.userCardRepository.find({
@@ -102,11 +132,20 @@ export class BattleLogService {
     }),
   );
 
-  // 일일 미션 체크
-  await this.dailyMissionService.evaluateWinMissions(winner.id);
+  // 미션 평가 (무승부가 아닐 때만)
+  if (!isDraw && winner) {
+    await this.dailyMissionService.evaluateWinMissions(winner.id);
+  }
+
+  //match_status 삭제
+  await this.matchRepo.delete({ playerId: winnerId });
+await this.matchRepo.delete({ playerId: match.opponentId });
 
   return savedBattleLog;
 }
+
+
+
 
 
   async getBattleLogs(player1Id: string, player2Id: string): Promise<BattleLog[]> {
@@ -171,21 +210,25 @@ export class BattleLogService {
     };
   };
 
-  // ✅ 전체 결과 변환
   const transformedLogs = logs.map(log => {
-    const isPlayer1 = log.player1.id === userId;
-    const myDeck = isPlayer1 ? log.usedDeck1 : log.usedDeck2;
-    const opponentDeck = isPlayer1 ? log.usedDeck2 : log.usedDeck1;
+  const isPlayer1 = log.player1.id === userId;
+  const myDeck = isPlayer1 ? log.usedDeck1 : log.usedDeck2;
+  const opponentDeck = isPlayer1 ? log.usedDeck2 : log.usedDeck1;
 
-    return {
-      id: log.id,
-      outcome: log.winner?.id === userId ? 'win' : 'loss',
-      trophies_change: log.trophies_change,
-      battle_record_time: log.created_at,
-      my_deck: transformDeck(myDeck),
-      opponent_deck: transformDeck(opponentDeck),
-    };
-  });
+  return {
+    id: log.id,
+    outcome: log.winner === null
+      ? 'draw'
+      : log.winner.id === userId
+        ? 'win'
+        : 'loss',
+    trophies_change: log.trophies_change,
+    battle_record_time: log.created_at,
+    my_deck: transformDeck(myDeck),
+    opponent_deck: transformDeck(opponentDeck),
+  };
+});
+
 
   return {
     total,

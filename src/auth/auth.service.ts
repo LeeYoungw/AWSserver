@@ -100,21 +100,17 @@ async register(email: string, password: string): Promise<User> {
 
 
 
-  async login(email: string, password: string): Promise<{ customToken: string }> {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) throw new UnauthorizedException('이메일이 존재하지 않습니다.');
+  async login(email: string, password: string): Promise<{ uid: string }> {
+  const user = await this.userRepository.findOne({ where: { email } });
+  if (!user) throw new UnauthorizedException('이메일이 존재하지 않습니다.');
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
 
-    try {
-      const firebaseUser = await admin.auth().getUserByEmail(email);
-      const customToken = await admin.auth().createCustomToken(firebaseUser.uid);
-      return { customToken };
-    } catch (error) {
-      throw new InternalServerErrorException(`Firebase 처리 오류: ${error.message}`);
-    }
-  }
+  
+  return { uid: user.id };
+}
+
 
   async generateCustomToken(uid: string): Promise<string> {
     try {

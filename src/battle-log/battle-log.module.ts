@@ -7,8 +7,9 @@ import { User } from '../entities/user.entity';
 import { UserCard } from 'src/entities/user-card.entity';
 import { DailyMissionModule } from 'src/daily/dailymission.module';
 import { UserDeck } from 'src/entities/user-deck.entity';
+import { MatchStatus } from 'src/entities/match_status.entity';
 @Module({
-  imports: [TypeOrmModule.forFeature([BattleLog,User,UserCard,UserDeck]),
+  imports: [TypeOrmModule.forFeature([BattleLog,User,UserCard,UserDeck, MatchStatus,]),
 DailyMissionModule,
 ], 
   controllers: [BattleLogController],

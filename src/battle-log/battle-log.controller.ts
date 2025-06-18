@@ -35,13 +35,14 @@ async getBattleLogsByUser(
   return this.battleLogService.getBattleLogsByUser(userId, page, limit);
 }
 
-  @Post('create')
-  @ApiOperation({ summary: '배틀 로그 저장' })
-  @ApiResponse({ status: 201, description: '배틀 로그 저장 성공' })
-  @ApiBody({ type: CreateBattleLogDto })
-  async createBattleLog(@Body() createBattleLogDto: CreateBattleLogDto) {
-    return this.battleLogService.createBattleLog(createBattleLogDto);
-  }
+@Post('create')
+@ApiOperation({ summary: '배틀 로그 저장' })
+@ApiResponse({ status: 201, description: '배틀 로그 저장 성공' })
+@ApiBody({ type: CreateBattleLogDto }) 
+async createBattleLog(@Body() createBattleLogDto: CreateBattleLogDto) {
+  return this.battleLogService.createBattleLogFromWinner(createBattleLogDto);
+}
+
 
   @Get(':player1_id/:player2_id')
   @ApiOperation({ summary: '두 유저 간의 배틀 로그 조회' })

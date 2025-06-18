@@ -38,7 +38,7 @@ export class BattleStatisticsService {
 
     if (selectedDeck && selectedDeck.slots.length > 0) {
       const totalMana = selectedDeck.slots.reduce((sum, slot) => {
-        return sum + (slot.card?.mana_cost || 0);
+        return sum + (slot.card?.manaCost || 0);
       }, 0);
       averageMana = parseFloat((totalMana / selectedDeck.slots.length).toFixed(2));
 

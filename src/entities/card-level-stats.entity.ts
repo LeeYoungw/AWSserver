@@ -18,6 +18,4 @@ export class CardLevelStats {
   @Column()
   attack: number;
 
-  @Column('float')
-  attack_speed: number;
 }

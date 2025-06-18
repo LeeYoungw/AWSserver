@@ -7,11 +7,16 @@ export class CardDetailResponseDto {
   @ApiProperty({ example: 'Warrior' })
   name: string;
 
+  @ApiProperty({ example:'U-ENg-002'})
+  cardcode: string;
+
   @ApiProperty({ example: 'unit' })
   type: string;
 
   @ApiProperty({ example: 5 })
   mana_cost: number;
+
+
 
   @ApiProperty({ example: 100 })
   max_health: number;

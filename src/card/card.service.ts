@@ -56,7 +56,7 @@ async getUserCards(userId: string, type?: string): Promise<UserCardsWithTotalDto
 
 
 
-  async getCardDetail(cardId: number): Promise<CardDetailResponseDto> {
+async getCardDetail(cardId: number): Promise<CardDetailResponseDto> {
   const card = await this.cardrepository.findOne({
     where: { id: cardId },
     relations: ['civilization'], // 문명 조인
@@ -68,88 +68,139 @@ async getUserCards(userId: string, type?: string): Promise<UserCardsWithTotalDto
     id: card.id,
     name: card.name,
     type: card.type,
-    mana_cost: card.mana_cost,
-    max_health: card.max_health,
+    cardcode: card.cardCode,
+    mana_cost: card.manaCost,
+    max_health: card.maxHealth,
     attack: card.attack,
-    movement_speed: card.movement_speed,
-    attack_range: card.attack_range,
-    vision_range: card.vision_range,
-    attack_speed: card.attack_speed,
-    hitbox_size: card.hitbox_size,
-    summon_time: card.summon_time,
-    projectile_speed: card.projectile_speed,
-    civilization: card.civilization?.name ?? null, // 문명 이름 포함
+    movement_speed: card.movementSpeed,
+    attack_range: card.attackRange,
+    vision_range: card.visionRange,
+    attack_speed: card.attackSpeed,
+    hitbox_size: card.hitboxSize,
+    summon_time: card.summonTime,
+    projectile_speed: card.projectileSpeed,
+    civilization: card.civilization?.name ?? null,
   };
 }
 
 
-  // 카드 업그레이드
-  async upgradeCard(userId: string, cardId: number): Promise<UpgradeCardResponseDto> {
+
+async upgradeCard(userId: string, cardId: number): Promise<UpgradeCardResponseDto> {
   const userCard = await this.userCardRepo.findOne({
     where: { user: { id: userId }, card: { id: cardId } },
     relations: ['card'],
   });
 
-  if (!userCard) throw new NotFoundException('해당 카드를 보유하고 있지 않습니다.');
-  if (userCard.quantity < 5) throw new BadRequestException('카드 업그레이드 조건을 충족하지 않습니다.');
+  if (!userCard) {
+    throw new NotFoundException('해당 카드를 보유하고 있지 않습니다.');
+  }
 
+  const currentLevel = userCard.level;
+  const MAX_LEVEL = 4;
+
+  if (currentLevel >= MAX_LEVEL) {
+    throw new BadRequestException(`최대 레벨(${MAX_LEVEL - 1})을 초과할 수 없습니다.`);
+  }
+
+  const requiredCards = this.getRequiredCardsForLevel(currentLevel);
+
+  if (userCard.quantity < requiredCards) {
+    throw new BadRequestException(`업그레이드에 필요한 카드 수 부족 (${requiredCards}개 필요)`);
+  }
+
+  // 유저 조회
+  const user = await this.userRepo.findOne({ where: { id: userId } });
+  if (!user) {
+    throw new NotFoundException('사용자를 찾을 수 없습니다.');
+  }
+
+  // 수량 차감 및 레벨 증가
+  userCard.quantity -= requiredCards;
   userCard.level += 1;
-  userCard.quantity -= 5;
 
-  const saved = await this.userCardRepo.save(userCard);
+  // 업그레이드 가능 여부 갱신
+  const nextRequired = this.getRequiredCardsForLevel(userCard.level);
+  userCard.upgradeable = userCard.quantity >= nextRequired;
+
+  // 카드 스탯 증가 (테스트용)
+  const card = userCard.card;
+  card.maxHealth = Math.floor(card.maxHealth * 1.1);
+  card.attack = Math.floor(card.attack * 1.1);
+
+  // 경험치 지급
+  const EXP_GAIN_PER_UPGRADE = 100;
+  user.exp += EXP_GAIN_PER_UPGRADE;
+
+  // 저장
+  await Promise.all([
+    this.cardRepo.save(card),
+    this.userCardRepo.save(userCard),
+    this.userRepo.save(user),
+  ]);
 
   return {
-    id: saved.id,
-    level: saved.level,
-    quantity: saved.quantity,
-    upgradeable: saved.quantity >= 5,
+    id: userCard.id,
+    level: userCard.level,
+    quantity: userCard.quantity,
+    upgradeable: userCard.upgradeable,
     card: {
-      id: saved.card.id,
-      name: saved.card.name,
-      type: saved.card.type,
+      id: card.id,
+      name: card.name,
+      type: card.type,
     },
   };
 }
 
-  // 카드 획득
-  async acquireCard(acquireCardDto: AcquireCardDto): Promise<UserCard> {
-    const { userId, cardId, quantity } = acquireCardDto;
-    const addQuantity = quantity || 1;
 
-    // 사용자가 존재하는지 확인
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    // 카드가 존재하는지 확인
-    const card = await this.cardRepo.findOne({ where: { id: cardId } });
-    if (!card) {
-      throw new NotFoundException('카드를 찾을 수 없습니다.');
-    }
-
-    // 이미 획득한 카드인지 확인
-    let userCard = await this.userCardRepo.findOne({ where: { user: { id: userId }, card: { id: cardId } } });
-
-    if (userCard) {
-      // 이미 가지고 있는 카드라면 수량만 증가시키기
-      userCard.quantity += addQuantity;
-    } else {
-      // 새로운 카드 획득
-      userCard = this.userCardRepo.create({
-        user,
-        card,
-        level: 1,  // 기본적으로 레벨 1로 설정
-        quantity: addQuantity,
-        upgradeable: false,
-      });
-    }
-
-    // 유저 카드 저장
-    await this.userCardRepo.save(userCard);
-
-    // 카드 획득 후 보상 로직을 여기에 추가 가능 (예: XP 증가 등)
-
-    return userCard;  // 획득한 카드 반환
+private getRequiredCardsForLevel(level: number): number {
+  switch (level) {
+    case 1: return 3;
+    case 2: return 15;
+    case 3: return 75;
+    default: return Infinity;
   }
 }
+
+async acquireCard(acquireCardDto: AcquireCardDto): Promise<UserCard> {
+  const { userId, cardId, quantity } = acquireCardDto;
+  const addQuantity = quantity || 1;
+
+  // 사용자 존재 확인
+  const user = await this.userRepo.findOne({ where: { id: userId } });
+  if (!user) {
+    throw new NotFoundException('사용자를 찾을 수 없습니다.');
+  }
+
+  // 카드 존재 확인
+  const card = await this.cardRepo.findOne({ where: { id: cardId } });
+  if (!card) {
+    throw new NotFoundException('카드를 찾을 수 없습니다.');
+  }
+
+  // 유저 카드 확인
+  let userCard = await this.userCardRepo.findOne({
+    where: { user: { id: userId }, card: { id: cardId } },
+  });
+
+  if (userCard) {
+    userCard.quantity += addQuantity;
+  } else {
+    userCard = this.userCardRepo.create({
+      user,
+      card,
+      level: 1,
+      quantity: addQuantity,
+      upgradeable: false,
+    });
+  }
+
+  // 업그레이드 가능 여부만 판단 (레벨업은 하지 않음)
+  const required = this.getRequiredCardsForLevel(userCard.level);
+  userCard.upgradeable = userCard.quantity >= required;
+
+  await this.userCardRepo.save(userCard);
+
+  return userCard;
+}erCard;
+}
+

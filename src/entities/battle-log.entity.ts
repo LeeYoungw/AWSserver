@@ -25,9 +25,11 @@ export class BattleLog {
   @Index('idx_player2Id')
   player2: User;
 
-  @ManyToOne(() => User, (user) => user.battleLogsAsWinner, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'winnerId' })
-  winner: User;
+@ManyToOne(() => User, (user) => user.battleLogsAsWinner, { onDelete: 'CASCADE', nullable: true })
+@JoinColumn({ name: 'winnerId' })
+winner: User;
+
+
 
   @Column()
   trophies_change: number;
